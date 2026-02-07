@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theme Park Tycoon</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="ui-layer">
+        <div id="stats-bar">
+            <div class="stat money">Cash: $<span id="money-display">1000</span></div>
+            <div class="stat guests">Guests: <span id="guest-display">0</span></div>
+        </div>
+        <div id="toolbar">
+        <button class="tool-button" onclick="selectTool('path')" id="button-path">
+            Path
+            <span class="cost">$10</span>
+        </button>
+        <button class="tool-button" onclick="selectTool('burger')" id="button-burger">
+            Burger Stall
+            <span class="cost">$200</span>
+        </button>
+        <button class="tool-button" onclick="selectTool('ride_swing')" id="button-ride_swing">
+            Sky Swinger
+            <span class="cost">$500</span>
+        </button>
+        <button class="tool-btn" onclick="selectTool('delete')" id="button-delete">
+            Bulldoze
+            <span class="cost">$50</span>
+        </button>
+        </div>
+        <div id="tooltip"></div>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+</body>
+<script src="script.js"></script>
+</html>
