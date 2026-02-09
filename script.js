@@ -80,6 +80,66 @@ class Guest {
         }
     }
     pickNewAction() {
-        
+        if (this.money < 10 || Math.random() < 0.005) {}
+        if (Math.random() < 0.008 && buildings.length > 1) {
+            const attractions = buildings.filter(b => b.type !== 'ticket_booth' && b.type !== 'path');
+            if (attractions.length > 0) {
+                const randomRide = attractions[Math.floor(Math.random() * attractions.length)];
+                let cost = (randomRide.type === 'burger') ? 10 : 25;
+                if (this.money >= cost) {
+                    this.state = 'walking_to_ride';
+                    this.goToBuilding(randomRide);
+                    return;
+                }
+            }
+        }
+        this.state = 'wandering';
+        this.targetX = Math.random() * (canvas.width - 50) + 25;
+        this.targetY = Math.random() * (canvas.height - 50) + 25;
     }
+
+    draw() {
+        if (this.state === 'riding') return;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        if (this.state === 'entering') {
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '10px Calibri';
+            ctx.fillText('?', this.x, this.y - 10);
+        }
+    }
+}
+
+class FloatingText {
+    constructor(text, x, y, color = '#2ecc71') {
+        this.text = text;
+        this.x = x;
+        this.y = y;
+        this.life = 60;
+        this.vy = -1;
+        this.color = color;
+    }
+    update() {
+        this.y += this.vy;
+        this.life--;
+    }
+    draw() {
+        ctx.fillStyle = this.color;
+        ctx.font = 'bold 14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(this.text, this.x, this.y);
+    }
+}
+function updateMoney(amount) {
+    money += amount;
+    document.getElementById('money-display').innerText = money;
+}
+function selectTool(toolName) {
+    selectedTool = toolName;
+    
 }
