@@ -141,5 +141,49 @@ function updateMoney(amount) {
 }
 function selectTool(toolName) {
     selectedTool = toolName;
-    
+    document.querySelectorAll('.tool-button').forEach(button => button.classList.remove('active'));
+    if (toolName) {
+        document.getElementById(`btn-${toolName}`).classList.add('active');
+    }
+}
+function spawnFloatingText(text, x, y, color) {
+    particles.push(new FloatingText(text, x, y, color));
+}
+function processBuildings() {
+    buildings.forEach(b => {
+        if (b.type === 'path') return;
+        if (b.type === 'ticket_booth') {
+            if (b.state === 'idle' && b.queue.length > 0) {
+                b.state = 'processing';
+                b.timer = b.duration;
+                const guest = b.queue.shift();
+                b.riders = [guest];
+            } else if (b.state === 'processing') {
+                b.timer--;
+                if (b.timer <= 0) {
+                    const guest = b.riders[0];
+                    if (guest) {
+                        guest.money -= 15;
+                        updateMoney(15);
+                        spawnFloatingText("+$15", b.x * GRID_SIZE, b.y * GRID_SIZE);
+                        guest.state = 'wandering';
+                        guest.pickNewAction();
+                    }
+                    b.riders = [];
+                    b.state = 'idle';
+                }
+            }
+        } else {
+            if (b.state === 'idle') {
+                if (b.queue.length = 0) {
+                    while (b.riders.length < b.capacity && b.queue.length > 0) {
+                        const guest = b.queue.shift();
+                        const cost = (b.type === 'burger') ? 10 : 25;
+                        guest.money -= cost;
+                        updateMoney()
+                    }
+                }
+            }
+        }
+    })
 }
