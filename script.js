@@ -296,5 +296,91 @@ function drawBuilding(b) {
         ctx.beginPath();
         ctx.moveTo(px, py + 8);
         ctx.lineTo(cx, py - 3);
+        ctx.lineTo(px + GRID_SIZE, py + 10);
+        ctx.fill();
+        
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '10px Calibri';
+        ctx.textAlign = 'center';
+        ctx.fillText('ENTRY', cx, cy + 10);
+    } else if (b.type === 'burger') {
+        ctx.fillStyle = '#f1c40f';
+        ctx.fillRect(px + 5, py + 10, GRID_SIZE - 10, GRID_SIZE - 10);
+        ctx.fillStyle = '#e74c3c';
+        ctx.beginPath();
+        ctx.moveTo(px, py + 10);
+        ctx.lineTo(cx, py - 5);
+        ctx.lineTo(px + GRID_SIZE, py + 10);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.Font = '10px Calibri';
+        ctx.textAlign = 'center';
+        ctx.fillText('Burger', cx, cy + 5);
+
+        if (b.state === 'running') {
+            ctx.fillStyle = '#2ecc71';
+            ctx.fillRect(px, py - 10, (b.timer / b.duration) * GRID_SIZE, 5);
+        }
+    } else if (b.type === 'ride_swing') {
+        ctx.fillStyle = '#34495e';
+        ctx.fillRect(px, py, GRID_SIZE, GRID_SIZE);
+        let swing = 0;
+        if (b.state === 'running') {
+            swing = Math.sin(Date.now() / 200) * 1.2;
+        } else {
+            swing = Math.sin(Date.now() / 1000) * 0.1;
+        }
+
+        ctx.save();
+        ctx.translate(cx, py + 5);
+        ctx.strokeStyle = '#7f8c8d';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(-15, 35);
+        ctx.moveTo(0, 0);
+        ctx.lineTo(15, 35);
+        ctx.stroke();
+        ctx.rotate(swing); 
+        ctx.strokeStyle = '#e67e22';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, 25);
+        ctx.stroke();
+        ctx.fillStyle = b.state === 'running' ? '#e74c3c' : '#95a5a6';
+        ctx.fillRect(-8, 25, 16, 8);
+        ctx.restore();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '10px Calibri';
+        ctx.fillText(`${b.riders.length}/${b.capacity}`, cx, py + GRID_SIZE - 2);
     }
 }
+function loop() {
+    frameCount++;
+    processBuildings();
+    ctx.fillStyle = '#27ae60';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    drawGrid();
+    buildings.forEach(drawBuilding);
+    if (guests.length < 30 && Math.random() < 0.002) {
+        guests.push(new Guest());
+        document.getElementById('guest-display').innerText = guests.length;
+    }
+    guests.forEach(g => {
+        g.update();
+        g.draw();
+    });
+    for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.update();
+        p.draw();
+        if (p.life <= 0) particles.splice(i, 1);
+    }
+    requestAnimationFrame(loop);
+}
+loop();
+window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+});
