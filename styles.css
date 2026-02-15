@@ -63,4 +63,19 @@ body {
     background: #df781e;
     border-color: #d35400;
 }
-.cost
+.cost {
+    font-size: 11px;
+    color: #bdc3c7;
+    margin-top: 4px;
+}
+canvas {
+    display: block;
+}
+#tooltip {
+    position: absolute;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 5px;
+    border-radius: 4px;
+    pointer;
+}
