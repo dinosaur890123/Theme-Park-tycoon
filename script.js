@@ -2,29 +2,63 @@ const GRID_SIZE = 40;
 const CANVAS_WIDTH = window.innerWidth;
 const CANVAS_HEIGHT = window.innerHeight;
 let money = 1000;
+let maxGuests = 30;
 let guests = [];
 let buildings = [];
-let particles = []; 
+let particles = [];
 let selectedTool = null;
 let frameCount = 0;
+let parkWidth = 15;
+let parkHeight = 12;
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 canvas.width = CANVAS_WIDTH;
 canvas.height = CANVAS_HEIGHT;
 const ENTRANCE_GRID = {x: 2, y: 2};
+
 const ticketBooth = {
     x: ENTRANCE_GRID.x,
     y: ENTRANCE_GRID.y,
     type: 'ticket_booth',
     queue: [],
     riders: [],
-    capacity: 1, 
-    duration: 30,
+    capacity: 1,
+    duration: 60,
     state: 'idle',
     timer: 0
 };
 buildings.push(ticketBooth);
-
+function toggleUpgrades() {
+    const menu = document.getElementById('upgrades-menu');
+    menu.classList.toggle('hidden');
+}
+window.buyUpgrade = function(type) {
+    if (type === 'expand_land') {
+        if (money >= 500) {
+            updateMoney(-500);
+            parkWidth += 5;
+            parkHeight += 5;
+            spawnFloatingText("Park expanded!", canvas.width / 2, canvas.height / 2, '#f1c40f');
+        } else {
+            alert("Not enough money");
+        }
+    } else if (type === 'marketing') {
+        if (money >= 300) {
+            updateMoney(-300);
+            maxGuests += 10;
+            document.getElementById('max-guests-display').innerText = maxGuests;
+            spawnFloatingText("CAPACITY UP!", canvas.width / 2, canvas.height / 2, '#3498db');
+        } else {
+            alert("Not enough money");
+        }
+    } else if (type === 'fast_tickets') {
+        if (money >= 200) {
+            uppdateMoney(-200);
+            ticketBooth.duration = 30;
+            spawnFloatingText("Speedy tickets")
+        }
+    }
+}
 class Guest {
     constructor() {
         this.x = -20; 

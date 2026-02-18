@@ -10,7 +10,33 @@
     <div id="ui-layer">
         <div id="stats-bar">
             <div class="stat money">Cash: $<span id="money-display">1000</span></div>
-            <div class="stat guests">Guests: <span id="guest-display">0</span></div>
+            <div class="stat guests">Guests: <span id="guest-display">0</span> / <span id="max-guests-display">30</span></div>
+            <button id="button-open-upgrades" onclick="toggleUpgrades()">Upgrades</button>
+        </div>
+        <div id="upgrade-menu" class="hidden">
+            <h2>Park upgrades</h2>
+            <div class="upgrade-item">
+                <div class="info">
+                    <strong>Expand capacity</strong>
+                    <p>Add 5 more rows/columnss of space.</p>
+                </div>
+                <button onclick="buyUpgrade('expand_land')">$500</button>
+            </div>
+            <div class="upgrade-item">
+                <div class="info">
+                    <strong>Marketing Campaign</strong>
+                    <p>Increase max guests by 10</p>
+                </div>
+                <button onclick="buyUpgrade('marketing')">$300</button>
+            </div>
+            <div class="upgrade-item">
+                <div class="info">
+                    <strong>High-Speed Turnstiles</strong>
+                    <p>Ticket booth works 50% faster.</p>
+                </div>
+                <button onclick="buyUpgrade('fast_tickets')">$200</button>
+            </div>
+            <button class="close-button" onclick="toggleUpgrades()">Close</button>
         </div>
         <div id="toolbar">
         <button class="tool-button" onclick="selectTool('path')" id="button-path">
