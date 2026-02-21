@@ -9,11 +9,28 @@ let guests = [];
 let buildings = [];
 let particles = [];
 let selectedTool = null;
+let selectedBuilding = null;
+let autoCollect = false;
+let camera = {x: (WORLD_WIDTH /2 ) - (CANVAS_WIDTH /2 ), y: (WORLD_HEIGHT / 2) - (CANVAS_HEIGHT / 2)};
+let isDragging = false;
+let lastMouse = {x: 0, y: 0};
 let frameCount = 0;
-let parkWidth = 15;
+let parkWidth = 16;
 let parkHeight = 12;
+const PARK_ORIGIN_X = Math.floor(WORLD_WIDTH / GRID_SIZE / 2 - parkWidth / 2);
+const PARK_ORIGIN_Y = Math.floor(WORLD_HEIGHT / GRID_SIZE / 2 - parkHeight / 2);
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+const entrances = [
+    {id: 0, x: PARK_ORIGIN_X + 2, y: PARK_ORIGIN_Y - 2, unlocked: true, price: 0},
+    {id: 1, x: PARK_ORIGIN_X + 8, y: PARK_ORIGIN_Y - 2, unlocked: false, price: 500},
+    {id: 2, x: PARK_ORIGIN_X + 14, y: PARK_ORIGIN_Y - 2, unlocked: false, price: 500},
+    {id: 3, x: PARK_ORIGIN_X + 18, y: PARK_ORIGIN_Y + 4, unlocked: false, price: 800},
+    {id: 4, x: PARK_ORIGIN_X + 18, y: PARK_ORIGIN_Y + 10, unlocked: false, price: 800},
+    {id: 5, x: PARK_ORIGIN_X + 8, y: PARK_ORIGIN_Y + 14, unlocked: false, price: 600},
+    {id: 6, x: PARK_ORIGIN_X - 2, y: PARK_ORIGIN_Y + 8, unlocked: false, price: 600},
+    {id: 7, x: PARK_ORIGIN_X - 2, y: PARK_ORIGIN_Y + 2, unlocked: false, price: 600}
+];
 canvas.width = CANVAS_WIDTH;
 canvas.height = CANVAS_HEIGHT;
 const ENTRANCE_GRID = {x: 2, y: 2};
@@ -34,32 +51,43 @@ function toggleUpgrades() {
     const menu = document.getElementById('upgrades-menu');
     menu.classList.toggle('hidden');
 }
-window.buyUpgrade = function(type) {
-    if (type === 'expand_land') {
-        if (money >= 500) {
-            updateMoney(-500);
-            parkWidth += 5;
-            parkHeight += 5;
-            spawnFloatingText("Park expanded!", canvas.width / 2, canvas.height / 2, '#f1c40f');
-        } else {
-            alert("Not enough money");
-        }
-    } else if (type === 'marketing') {
-        if (money >= 300) {
-            updateMoney(-300);
-            maxGuests += 10;
-            document.getElementById('max-guests-display').innerText = maxGuests;
-            spawnFloatingText("CAPACITY UP!", canvas.width / 2, canvas.height / 2, '#3498db');
-        } else {
-            alert("Not enough money");
-        }
-    } else if (type === 'fast_tickets') {
-        if (money >= 200) {
-            uppdateMoney(-200);
-            ticketBooth.duration = 30;
-            spawnFloatingText("Speedy tickets")
-        }
+function getWorldMouse(e) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+        x: e.clientX - rect.left + camera.x, y: e.clientY - rect.top + camera.y
+    };
+}
+function updateMoney(amount) {
+    money += amount;
+    document.getElementById('money-display').innerText = Math.floor(money);
+    updateGuestCapacity();
+}
+function updateGuestCapacity() {
+    let cap = 5;
+    const carParks = buildings.filter(b => b.type === 'car_park');
+    carParks.forEach(cp => {
+        cap += cp.capacity;
+    });
+    document.getElementById('max-guests-display').innerText = cap;
+    return cap;
+}
+window.selectTool = function(toolName) {
+    selectedTool = toolName;
+    document.querySelectorAll('.tool-button').forEach(button => button.classList.remove('active'));
+    if (toolName) {
+        document.getElementById(`button-${toolName}`).classList.add('active');
+        canvas.style.cursor = 'crosshair';
+    } else {
+        document.getElementById(`button-pointer`).classList.add('active');
+        canvas.style.cursor = 'grab';
     }
+};
+window.toggleUpgrades = function() {
+    document.getElementById('upgrades-menu').classList.toggle('hidden');
+    document.getElementById('building-menu').classList.add('hidden');
+};
+window.buyGlobalUpgrade = function(type) {
+    
 }
 class Guest {
     constructor() {
