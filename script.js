@@ -87,21 +87,102 @@ window.toggleUpgrades = function() {
     document.getElementById('building-menu').classList.add('hidden');
 };
 window.buyGlobalUpgrade = function(type) {
-    
+    if (type === 'auto_collect') {
+        if (money >= 2000 && !autoCollect) {
+            updateMoney(-2000);
+            autoCollect = true;
+            document.getElementById('button-auto-collect').innerText = "Owned";
+            document.getElementById('button-auto-collect').disabled = true;
+            spawnFloatingText("Auto collect on!", camera.x + CANVAS_WIDTH / 2, camera.y + CANVAS_HEIGHT/2, '#ccac2b');
+        }
+    } else if (type === 'expand_land') {
+        if (money >= 500) {
+            updateMoney(-500);
+            parkWidth += 2;
+            parkHeight += 2;
+            spawnFloatingText("Land expanded!", camera.x + CANVAS_WIDTH / 2, camera.y + CANVAS_HEIGHT / 2, '#c2a324');
+        }
+    }
+};
+function openBuildingMenu(b) {
+    selectedBuilding = b;
+    const menu = document.getElementById('building-menu');
+    menu.classList.remove('hidden');
+    document.getElementById('upgrades-menu').classList.add('hidden');
+    let name = b.type.replace('_', ' ').toUpperCase();
+    document.getElementById('b-menu-title').innerText = name;
+    document.getElementById('b-menu-level').innerText = `Level ${b.level}`;
+    document.getElementById('b-menu-stored').innerText = b.storedMoney;
+
+    const upgradeCost = b.level * 150;
+    const button = document.getElementById('b-menu-upgrade-button');
+    button.innerText = `$${upgradeCost}`;
+    button.onclick = () => upgradeSelectedBuilding();
 }
+window.closeBuildingMenu = function() {
+    document.getElementById('building-menu').classList.add('hidden');
+    selectedBuilding = null;
+};
+window.collectSelected = function() {
+    if (selectedBuilding && selectedBuilding.storedMoney > 0) {
+        collectMoneyFromBuilding(selectedBuilding);
+        document.getElementById('b-menu-stored').innerText = 0;
+    }
+};
+function collectMoneyFromBuilding(b) {
+    if (b.storedMoney) {
+        const amount = b.storedMoney;
+        updateMoney(amount);
+        spawnFloatingText(`+$${amount}`, b.x * GRID_SIZE + GRID_SIZE/2, b.y * GRID_SIZE, '#2ecc71');
+        b.storedMoney = 0;
+    }
+}
+window.upgradeSelectedBuilding = function() {
+    if (selectedBuilding) return;
+    const cost = selectedBuilding.level * 150;
+    if (money >= cost) {
+        updateMoney(-cost);
+        selectedBuilding.level++;
+        if (selectedBuilding.type === 'car_park') {
+            selectedBuilding.capacity += 5;
+            updateGuestCapacity();
+        } else {
+            selectedBuilding.ticketPrice += 5;
+            selectedBuilding.duration = Math.max(20, selectedBuilding.duration - 5);
+        }
+        spawnFloatingText("Level up!", selectedBuilding.x * GRID_SIZE, selectedBuilding.y * GRID_SIZE, '#e67e22');
+        openBuildingMenu(selectedBuilding);
+    } else {
+        alert("Not enough cash!");
+    }
+};
+window.deleteSelectedBuilding = function() {
+    if (selectedBuilding) {
+        const idx = buildings.indexOf(selectedBuilding);
+        if (idx !== -1) {
+            buildings.splice(idx, 1);
+            updateGuestCapacity();
+        }
+        closeBuildingMenu();
+    }
+};
 class Guest {
     constructor() {
-        this.x = -20; 
-        this.y = ENTRANCE_GRID.y * GRID_SIZE + GRID_SIZE / 2;
+        const available = ENTRANCES.filter(e => e.unlocked);
+        const entry = available[Math.floor(Math.random() * available.length)];
+        this.x = entry.x * GRID_SIZE + GRID_SIZE / 2;
+        this.y = entry.y * GRID_SIZE + GRID_SIZE / 2;
         this.targetX = this.x;
         this.targetY = this.y;
         this.size = 6;
         this.color = `hsl(${Math.random() * 360}, 70%, 60%)`;
         this.speed = 0.5 + Math.random() * 0.4;
-        this.state = 'entering'; 
+        this.state = 'wandering'; 
         this.targetBuilding = ticketBooth;
         this.money = 50 + Math.floor(Math.random() * 100);
-        this.goToBuilding(ticketBooth);
+        this.targetBuilding = null;
+        this.targetX = (PARK_ORIGIN_X + parkWidth / 2) * GRID_SIZE;
+        this.targetY = (PARK_ORIGIN_Y + parkHeight / 2) * GRID_SIZE;
     }
 
     update() {
@@ -124,42 +205,40 @@ class Guest {
     }
 
     handleArrival() {
-        if (this.state === 'entering') {
-            if (this.targetBuilding && this.targetBuilding.type === 'ticket_booth') {
-                this.targetBuilding.queue.push(this);
-                this.state = 'queuing';
-            }
-        }
-        else if (this.state === 'wandering') {
-            this.pickNewAction();
-        }
-        else if (this.state === 'walking_to_ride') {
-            if (this.targetBuilding) {
+        if (this.state === 'walking_to_ride') {
+            if (this.targetBuilding && buildings.includes(this.targetBuilding)) {
                 this.targetBuilding.queue.push(this);
                 this.state = 'queuing';
             } else {
                 this.state = 'wandering';
                 this.pickNewAction();
             }
+        } else {
+            this.pickNewAction();
         }
     }
     pickNewAction() {
-        if (this.money < 10 || Math.random() < 0.005) {}
-        if (Math.random() < 0.008 && buildings.length > 1) {
-            const attractions = buildings.filter(b => b.type !== 'ticket_booth' && b.type !== 'path');
-            if (attractions.length > 0) {
-                const randomRide = attractions[Math.floor(Math.random() * attractions.length)];
-                let cost = (randomRide.type === 'burger') ? 10 : 25;
-                if (this.money >= cost) {
-                    this.state = 'walking_to_ride';
-                    this.goToBuilding(randomRide);
-                    return;
-                }
+        if (this.money < 5 || Math.random() < 0.005) {
+            const idx = guests.indexOf(this);
+            if (idx > -1) guests.splice(idx, 1);
+            return;
+        }
+        const attractions = buildings.filter(b => (b.type === 'burger' || b.type === 'ride_swing'));
+        if (attractions.length > 0 && Math.random() < 0.7) {
+            const ride = attractions[Math.floor(Math.random() * attractions.length)];
+            if (this.money >= ride.ticketPrice) {
+                this.state = 'walking_to_ride';
+                this.goToBuilding(ride);
+                return;
             }
         }
+        const minX = PARK_ORIGIN_X * GRID_SIZE;
+        const maxX = (PARK_ORIGIN_X + parkWidth) * GRID_SIZE;
+        const minY = PARK_ORIGIN_Y * GRID_SIZE;
+        const maxY = (PARK_ORIGIN_Y + parkHeight) * GRID_SIZE;
         this.state = 'wandering';
-        this.targetX = Math.random() * (canvas.width - 50) + 25;
-        this.targetY = Math.random() * (canvas.height - 50) + 25;
+        this.targetX = minX + Math.random() * (maxX - minX);
+        this.targetY = minY + Math.random() * (maxY - minY);
     }
 
     draw() {
@@ -168,14 +247,8 @@ class Guest {
         ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
         ctx.fillStyle = this.color;
         ctx.fill();
-        ctx.strokeStyle = 'white';
-        ctx.lineWidth = 1;
+        ctx.strokeStyle = '#ffffff';
         ctx.stroke();
-        if (this.state === 'entering') {
-            ctx.fillStyle = '#ffffff';
-            ctx.font = '10px Calibri';
-            ctx.fillText('?', this.x, this.y - 10);
-        }
     }
 }
 
@@ -197,6 +270,7 @@ class FloatingText {
         ctx.font = 'bold 14px Arial';
         ctx.textAlign = 'center';
         ctx.fillText(this.text, this.x, this.y);
+        ctx.globalAlpha = 1.0;
     }
 }
 function updateMoney(amount) {
@@ -215,7 +289,11 @@ function spawnFloatingText(text, x, y, color) {
 }
 function processBuildings() {
     buildings.forEach(b => {
-        if (b.type === 'path') return;
+        if (autoCollect && b.storedMoney > 0 && frameCount % 60 === 0) {
+            collectMoneyFromBuilding(b);
+        }
+        if (b.type === 'path' || b.type === 'car_park') return;
+
         if (b.type === 'ticket_booth') {
             if (b.state === 'idle' && b.queue.length > 0) {
                 b.state = 'processing';
@@ -233,33 +311,6 @@ function processBuildings() {
                         guest.state = 'wandering';
                         guest.pickNewAction();
                     }
-                    b.riders = [];
-                    b.state = 'idle';
-                }
-            }
-        } else {
-            if (b.state === 'idle') {
-                if (b.queue.length = 0) {
-                    while (b.riders.length < b.capacity && b.queue.length > 0) {
-                        const guest = b.queue.shift();
-                        const cost = (b.type === 'burger') ? 10 : 25;
-                        guest.money -= cost;
-                        updateMoney(cost);
-                        spawnFloatingText(`+$${cost}`, b.x * GRID_SIZE + GRID_SIZE/2, b.y * GRID_SIZE);
-                        b.riders.push(guest);
-                    }
-                    b.state = 'running';
-                    b.timer = b.duration;
-                }
-            } else if (b.state === 'running') {
-                b.timer--;
-                if (b.timer <= 0) {
-                    b.riders.forEach(g => {
-                        g.state = 'wandering';
-                        g.x = b.x * GRID_SIZE + GRID_SIZE / 2;
-                        g.sy = b.y * GRID_SIZE + GRID_SIZE + 5;
-                        g.pickNewAction();
-                    });
                     b.riders = [];
                     b.state = 'idle';
                 }
