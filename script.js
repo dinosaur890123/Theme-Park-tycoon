@@ -294,84 +294,104 @@ function processBuildings() {
         }
         if (b.type === 'path' || b.type === 'car_park') return;
 
-        if (b.type === 'ticket_booth') {
-            if (b.state === 'idle' && b.queue.length > 0) {
-                b.state = 'processing';
-                b.timer = b.duration;
-                const guest = b.queue.shift();
-                b.riders = [guest];
-            } else if (b.state === 'processing') {
-                b.timer--;
-                if (b.timer <= 0) {
-                    const guest = b.riders[0];
-                    if (guest) {
-                        guest.money -= 15;
-                        updateMoney(15);
-                        spawnFloatingText("+$15", b.x * GRID_SIZE, b.y * GRID_SIZE);
-                        guest.state = 'wandering';
-                        guest.pickNewAction();
-                    }
-                    b.riders = [];
-                    b.state = 'idle';
+        if (b.state === 'idle') {
+            if (b.queue.length > 0) {
+                while (b.riders.length < b.capacity && b.queue.length > 0) {
+                    const guest = b.queue.shift();
+                    guest.money -= b.ticketPrice;
+                    b.storedMoney += b.ticketPrice;
+                    b.riders.push(guest);
                 }
+                b.state = 'running';
+                b.timer = b.duration;
+            }
+        } else if (b.state === 'running') {
+            b.timer--;
+            if (b.timer <= 0) {
+                b.riders.forEach(g => {
+                    g.state = 'wandering';
+                    g.x = b.x * GRID_SIZE + GRID_SIZE / 2;
+                    g.y = b.y * GRID_SIZE + GRID_SIZE + 5;
+                    g.pickNewAction();
+                });
+                b.riders = [];
+                b.state = 'idle';
             }
         }
     });
 }
 canvas.addEventListener('mouesdown', (e) => {
-    if (!selectedTool) return;
-    const rect = canvas.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-    const gridX = Math.floor(mouseX / GRID_SIZE);
-    const gridY = Math.floor(mouseY / GRID_SIZE);
-    const existingIndex = buildings.findIndex(b => b.x === gridX && b.y === gridY);
-    if (selectedTool === 'delete') {
-        if (existingIndex !== -1) {
-            const b = buildings[existingIndex];
-            if (b.type === 'ticket_booth') {
-                alert("You can't delete the entrance!");
-                return;
-            }
-            b.queue.forEach(g => {
-                g.state = 'wandering';
-                g.pickNewAction();
-            });
-            b.riders.forEach(g => {
-                g.state = 'wandering';
-                g.pickNewAction();
-            });
+    if (document.getElementById('upgrades-menu').classList.contains('hidden') === false) return;
 
-            buildings.splice(existingIndex, 1);
-            updateMoney(-50);
-            spawnFloatingText("-$50", mouseX, mouseY, '#e74c3c');
+    const mouse = getWorldMouse(e);
+    const gridX = Math.floor(mouse.x / GRID_SIZE);
+    const gridY = Math.floor(mouse.y / GRID_SIZE);
+
+    if (selectedTool) {
+        if (gridX < PARK_ORIGIN_X || gridX >= PARK_ORIGIN_X + parkWidth || gridY < PARK_ORIGIN_Y || gridY >= PARK_ORIGIN_Y + parkHeight) {
+            alert("Build inside the park fence!");
+            return;
         }
-        return;
-    }
-    if (existingIndex === -1) {
+        const existing = buildings.find(b => b.x === gridX && b.y === gridY);
+        if (existing) {
+            alert("Space occupied!");
+            return;
+        }
         let cost = 0;
-        let building = {
-            x: gridX, y: gridY, type: selectedTool, queue: [], riders: [], state: 'idle', timer: 0
+        let newB = {
+            x: gridX, y: gridY, type: selectedTool, level: 1, storedMoney: 0, queue: [], riders: [], state: 'idle', timer: 0, capacity: 0, ticketPrice: 0, duration: 0
         };
         if (selectedTool === 'path') {
             cost = 10;
+        } else if (selectedTool === 'car_park') {
+            cost = 150; 
+            newB.capacity = 5;
         } else if (selectedTool === 'burger') {
             cost = 200;
-            building.capacity = 1;
-            building.duration = 40;
+            newB.capacity = 2; 
+            newB.duration = 40; 
+            newB.ticketPrice = 10;
         } else if (selectedTool === 'ride_swing') {
-            cost = 500;
-            building.capacity = 4;
-            building.duration = 180;
-            building.swingAngle = 0;
+            cost = 500; 
+            newB.capacity = 4; 
+            newB.duration = 150; 
+            newB.ticketPrice = 25;
         }
-        
+
         if (money >= cost) {
             updateMoney(-cost);
-            buildings.push(building);
-            spawnFloatingText(`-$${cost}`, mouseX, mouseY, '#e74c3c');
+            buildings.push(newB);
+            spawnFloatingText(`-$${cost}`, mouse.x, mouse.y, '#e74c3c');
+            updateGuestCapacity();
         } else {
-            alert("Not enough money :(")
+            alert("Too expensive!");
+        }
+
+    } else {
+        isDragging = true;
+        lastMouse = {x: e.clientX, y: e.clientY};
+        const entrances = ENTRANCES.find(en => en.x === gridX && en.y === gridY);
+        if (entrances && !entrances.unlocked) {
+            if (money >= entrances.price) {
+                if (confirm(`Unlock entrance for $${entrances.price}?`)) {
+                    updateMoney(-entrances.price);
+                    entrances.unlocked = true;
+                    spawnFloatingText("Unlocked!", mouse.x, mouse.y, '#e7bd16');
+                }
+            } else {
+                alert(`Need $${entrances.price} to unlock :(`);
+            }
+            isDragging = false;
+            return;
+        }
+        const b = buildings.find(b => b.x === gridX && b.y === gridY);
+        if (b && b.type !== 'path') {
+            if (b.storedMoney > 0) {
+                collectMoneyFromBuilding(b);
+            } else {
+                openBuildingMenu(b);
+            }
+            isDragging = false;
         }
     }
 });
