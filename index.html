@@ -7,13 +7,23 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <div id="start-screen">
+        <div class="spotlight"></div>
+        <div class="start-content">
+            <p>Build. Get people to ride. Profit.</p>
+            <h1>Theme Park Tycoon</h1>
+            <p class="subtitle">Turn an empty grass lot into a money making cool theme park!</p>
+            <button id="start-button">Enter the park</button>
+        </div>
+        <div class="cool-lights" hidden="true"></div>
+    </div>
     <div id="ui-layer">
         <div id="stats-bar">
             <div class="stat money">Cash: $<span id="money-display">1000</span></div>
             <div class="stat guests">Guests: <span id="guest-display">0</span> / <span id="max-guests-display">30</span></div>
             <button id="button-open-upgrades" onclick="toggleUpgrades()">Upgrades</button>
         </div>
-        <div id="upgrade-menu" class="hidden">
+        <div id="upgrades-menu" class="hidden">
             <h2>Park upgrades</h2>
             <div class="upgrade-item">
                 <div class="info">
@@ -51,7 +61,7 @@
             Sky Swinger
             <span class="cost">$500</span>
         </button>
-        <button class="tool-btn" onclick="selectTool('delete')" id="button-delete">
+        <button class="tool-button" onclick="selectTool('delete')" id="button-delete">
             Bulldoze
             <span class="cost">$50</span>
         </button>

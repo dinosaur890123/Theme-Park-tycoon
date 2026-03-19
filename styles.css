@@ -28,7 +28,73 @@ body {
 }
 .money {color: #32b96b;}
 .guests {color: #3498db;}
+button {
+    cursor: pointer;
+    font-family: inherit;
+    border: none;
+    border-radius: 4px;
+}
 
+#button-open-upgrades {
+    background: #8e44ad;
+    color: white;
+    padding: 8px 15px;
+    font-weight: bold;
+    margin-left: auto;
+}
+#button-open-upgrades:hover {background: #9b59b6;}
+.hidden {
+    display: none !important;
+}
+#upgrades-menu, #building-menu {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    color: #3c3b3b;
+    padding: 20px;
+    border-radius: 8px;
+    width: 300px;
+    pointer-events: auto;
+    box-shadow: 0 0 20px rgba(0,0,0,0.8);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 100;
+}
+#building-menu h3 {
+    margin: 0;
+    color: #2c3e50;
+}
+#building-menu p {
+    margin: 0;
+    color: #7f8c8d;
+    font-size: 14px;
+}
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+}
+.upgrade-item, .upgrade-action {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f0f0f0;
+    padding: 10px;
+    border-radius: 5px;
+}
+.upgrade-item .info strong {
+    display: block;
+    font-size: 14px;
+}
+.upgrade-item .info p {
+    margin: 2px 0 0;
+    font-size: 11px;
+    color: #6b6868;
+}
 #toolbar {
     position: absolute;
     bottom: 20px;
@@ -80,4 +146,29 @@ canvas {
     pointer-events: none;
     display: none;
     font-size: 12px;
+}
+body.prestart #ui-layer {
+    opacity: 0;
+    pointer-events: none;
+}
+#start-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 9999; /* how to never run into issues lmao */
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    background: #2c5a80;
+}
+#start-screen .spotlight {
+    position: absolute;
+    width: 120vmax;
+    height: 120vmax;
+    background: conic-gradient(from 120deg, transparent 0 72%, rgba(255,255,255,0.08) 80%, transparent 67%);
+    animation: sweep 8s linear infinite;
+    filter: blur(2px);
+}
+.start-content {
+    text-align: center;
+    max-width: 680px;
 }

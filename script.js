@@ -21,7 +21,7 @@ const PARK_ORIGIN_X = Math.floor(WORLD_WIDTH / GRID_SIZE / 2 - parkWidth / 2);
 const PARK_ORIGIN_Y = Math.floor(WORLD_HEIGHT / GRID_SIZE / 2 - parkHeight / 2);
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-const entrances = [
+const ENTRANCES = [
     {id: 0, x: PARK_ORIGIN_X + 2, y: PARK_ORIGIN_Y - 2, unlocked: true, price: 0},
     {id: 1, x: PARK_ORIGIN_X + 8, y: PARK_ORIGIN_Y - 2, unlocked: false, price: 500},
     {id: 2, x: PARK_ORIGIN_X + 14, y: PARK_ORIGIN_Y - 2, unlocked: false, price: 500},
@@ -46,7 +46,18 @@ const ticketBooth = {
     state: 'idle',
     timer: 0
 };
+document.body.classList.add('prestart');
+const startScreen = document.getElementById('start-screen');
+const startButton = document.getElementById('start-button');
 buildings.push(ticketBooth);
+
+function enterPark() {
+    if (!startScreen) return;
+    document.body.classList.remove('prestart');
+    startScreen.classList.add('leave');
+    setTimeout(() => startScreen.remove(), 700);
+}
+
 function toggleUpgrades() {
     const menu = document.getElementById('upgrades-menu');
     menu.classList.toggle('hidden');
@@ -86,7 +97,7 @@ window.toggleUpgrades = function() {
     document.getElementById('upgrades-menu').classList.toggle('hidden');
     document.getElementById('building-menu').classList.add('hidden');
 };
-window.buyGlobalUpgrade = function(type) {
+window.buyUpgrade = function(type) {
     if (type === 'auto_collect') {
         if (money >= 2000 && !autoCollect) {
             updateMoney(-2000);
@@ -273,10 +284,6 @@ class FloatingText {
         ctx.globalAlpha = 1.0;
     }
 }
-function updateMoney(amount) {
-    money += amount;
-    document.getElementById('money-display').innerText = money;
-}
 function selectTool(toolName) {
     selectedTool = toolName;
     document.querySelectorAll('.tool-button').forEach(button => button.classList.remove('active'));
@@ -320,7 +327,7 @@ function processBuildings() {
         }
     });
 }
-canvas.addEventListener('mouesdown', (e) => {
+canvas.addEventListener('mousedown', (e) => {
     if (document.getElementById('upgrades-menu').classList.contains('hidden') === false) return;
 
     const mouse = getWorldMouse(e);
@@ -395,23 +402,52 @@ canvas.addEventListener('mouesdown', (e) => {
         }
     }
 });
-function drawGrid() {
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+canvas.addEventListener('mousemove', e => {
+    if (isDragging) {
+        const dx = e.clientX - lastMouse.x;
+        const dy = e.clientY - lastMouse.y;
+        camera.x -= dx;
+        camera.y -= dy;
+        lastMouse = {x: e.clientX, y: e.clientY};
+        canvas.style.cursor = 'grabbing';
+    }
+});
+canvas.addEventListener('mouseup', () => {
+    isDragging = false;
+    if(!selectedTool) canvas.style.cursor = 'grab';
+});
+function drawWorld() {
+    ctx.fillStyle = '#2d3b45';
+    ctx.fillRect(camera.x, camera.y, CANVAS_WIDTH, CANVAS_HEIGHT);
+    ctx.strokeStyle = '#2f3640';
     ctx.lineWidth = 1;
-    for (let x = 0; x <= canvas.width; x += GRID_SIZE) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
-        ctx.stroke();
-    }
-    for (let y = 0; y <= canvas.height; y += GRID_SIZE) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
-        ctx.stroke();
-    }
+    const parkPX = PARK_ORIGIN_X * GRID_SIZE;
+    const parkPY = PARK_ORIGIN_Y * GRID_SIZE;
+    ctx.fillStyle = '#2bbe68';
+    ctx.fillRect(parkPX, parkPY, parkWidth * GRID_SIZE, parkHeight * GRID_SIZE);
+    ctx.strokeStyle = '#bdc3c7';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(parkPX, parkPY, parkWidth * GRID_SIZE, parkHeight * GRID_SIZE);
 }
-
+function drawEntrances() {
+    ENTRANCES.forEach(e => {
+        const px = e.x * GRID_SIZE;
+        const py = e.y * GRID_SIZE;
+        ctx.fillStyle = e.unlocked ? '#2ecc71' : '#7f8c8d';
+        ctx.fillRect(px, py, GRID_SIZE, GRID_SIZE);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '10px Calibri';
+        ctx.textAlign = 'center';
+        ctx.fillText(e.unlocked ? 'ENTRY' : 'LOCKED', px + GRID_SIZE / 2, py + GRID_SIZE / 2 + 4);
+        if (!e.unlocked) {
+            ctx.font = '9px Arial';
+            ctx.fillText(`$${e.price}`, px + GRID_SIZE / 2, py + GRID_SIZE - 2);
+        }
+    });
+}
+if (startButton) {
+    startButton.addEventListener('click', enterPark);
+}
 function drawBuilding(b) {
     const px = b.x * GRID_SIZE;
     const py = b.y * GRID_SIZE;
@@ -494,28 +530,24 @@ function drawBuilding(b) {
 function loop() {
     frameCount++;
     processBuildings();
-    ctx.fillStyle = '#27ae60';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    drawGrid();
+    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    ctx.save();
+    ctx.translate(-camera.x, -camera.y);
+    
+    drawWorld();
+    drawEntrances();
+    
     buildings.forEach(drawBuilding);
-    if (guests.length < 30 && Math.random() < 0.002) {
-        guests.push(new Guest());
-        document.getElementById('guest-display').innerText = guests.length;
-    }
-    guests.forEach(g => {
-        g.update();
-        g.draw();
-    });
-    for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
-        p.update();
-        p.draw();
-        if (p.life <= 0) particles.splice(i, 1);
-    }
+    guests.forEach(g => {g.update(); g.draw();});
+    particles.forEach(p => {p.update(); p.draw(); if(p.life<=0) particles.shift();});
+    ctx.restore();
     requestAnimationFrame(loop);
 }
 loop();
 window.addEventListener('resize', () => {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
+});
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') enterPark();
 });
