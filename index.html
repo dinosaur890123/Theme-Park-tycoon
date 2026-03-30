@@ -48,6 +48,37 @@
             </div>
             <button class="close-button" onclick="toggleUpgrades()">Close</button>
         </div>
+        <div id="building-menu" class="hidden panel-card">
+            <div class="panel-head">
+                <h3 id="b-menu-title">Building</h3>
+                 <button class="close-button" onclick="closeBuildingMenu()">Close</button>
+            </div>
+
+            <div class="panel-stats">
+                <div class="stat-row">
+                    <span>Level</span>
+                    <strong id="b-menu-level">Level 1</strong>
+                </div>
+                <div class="stat-row">
+                    <pan>Queue</span>
+                    <strong id="b-menu-queue">0</strong>
+                </div>
+                <div class="stat-row">
+                    <span>Riders</span>
+                    <strong id="b-menu-riders">0</strong>
+                </div>
+                <div class="stat-row">
+                   <span>Ticket</span>
+                    <strong>$<span id="b-menu-ticket">0</span></strong>
+                </div>
+            </div>
+            <div class="panel-actions">
+                <button class="action-button collect" onclick="collectSelected()">Collect</button>
+                <button class="action-button upgrade" id="b-menu-upgrade-button">$150</button>
+                <button class="action-button danger" onclick="deleteSelectedBuilding()">Bulldoze</button>
+            </div>
+        </div>
+
         <div id="toolbar">
         <button class="tool-button" onclick="selectTool('path')" id="button-path">
             Path

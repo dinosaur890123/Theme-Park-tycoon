@@ -68,6 +68,16 @@ function getWorldMouse(e) {
         x: e.clientX - rect.left + camera.x, y: e.clientY - rect.top + camera.y
     };
 }
+function spawnGuest() {
+    const cap = getGuestCap();
+    if (guests.length >= cap) return;
+    const unlockedCount = ENTRANCES.filter(e => e.unlocked).length;
+    const spawnChance = Math.min(0.15 + unlockedCount * 0.02, 0.30);
+    if (Math.random() < spawnChance) {
+        guests.push(new Guest());
+        updateGuestCapacity();
+    }
+}
 function updateMoney(amount) {
     money += amount;
     document.getElementById('money-display').innerText = Math.floor(money);
@@ -80,6 +90,16 @@ function updateGuestCapacity() {
         cap += cp.capacity;
     });
     document.getElementById('max-guests-display').innerText = cap;
+    return cap;
+}
+function updateGuestDisplay() {
+    const guestDisplay = document.getElementById('guest-display');
+    if (guestDisplay) guestDisplay.innerText = guests.length;
+}
+function getGuestCap() {
+    let cap = 5;
+    const carParks = buildings.filter(b => b.type === 'car_park');
+    carParks.forEach(cp => cap += cp.capacity);
     return cap;
 }
 window.selectTool = function(toolName) {
@@ -120,10 +140,14 @@ function openBuildingMenu(b) {
     const menu = document.getElementById('building-menu');
     menu.classList.remove('hidden');
     document.getElementById('upgrades-menu').classList.add('hidden');
-    let name = b.type.replace('_', ' ').toUpperCase();
+    const name = b.type.replace('_', ' ').toUpperCase();
     document.getElementById('b-menu-title').innerText = name;
     document.getElementById('b-menu-level').innerText = `Level ${b.level}`;
     document.getElementById('b-menu-stored').innerText = b.storedMoney;
+
+    document.getElementById('b-menu-queue').innerText = (b.queue && b.queue.length) ? b.queue.length : 0;
+    document.getElementById('b-menu-riders').innerText = (b.riders && b.riders.length) ? b.riders.length : 0;
+    document.getElementById('b-menu-ticket').innerText = b.ticketPrice || 0;
 
     const upgradeCost = b.level * 150;
     const button = document.getElementById('b-menu-upgrade-button');
@@ -149,7 +173,7 @@ function collectMoneyFromBuilding(b) {
     }
 }
 window.upgradeSelectedBuilding = function() {
-    if (selectedBuilding) return;
+    if (!selectedBuilding) return;
     const cost = selectedBuilding.level * 150;
     if (money >= cost) {
         updateMoney(-cost);
@@ -282,13 +306,6 @@ class FloatingText {
         ctx.textAlign = 'center';
         ctx.fillText(this.text, this.x, this.y);
         ctx.globalAlpha = 1.0;
-    }
-}
-function selectTool(toolName) {
-    selectedTool = toolName;
-    document.querySelectorAll('.tool-button').forEach(button => button.classList.remove('active'));
-    if (toolName) {
-        document.getElementById(`btn-${toolName}`).classList.add('active');
     }
 }
 function spawnFloatingText(text, x, y, color) {
