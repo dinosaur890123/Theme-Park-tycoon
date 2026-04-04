@@ -69,11 +69,18 @@ button {
     font-size: 14px;
 }
 .stat-row {
-    background: #ffffff
+    background:#1d2733;
+    color:#b2c0d2;
+    border: 1px solid #31465d;
+    border-radius: 8px;
+    padding: 8px 10px;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-weight: bold;
+    justify-content:space-between;
+    align-items:center;
+    font-weight: 700;
+}
+.stat-row strong{
+    color:#ffffff;
 }
 .upgrade-item, .upgrade-action {
     display: flex;
@@ -223,7 +230,7 @@ body.prestart #ui-layer {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid var(--ui-line);
+    border-bottom: 1px solid #25493b;
 }
 .panel-head h3 {
     margin: 0;
@@ -234,6 +241,37 @@ body.prestart #ui-layer {
     display: grid;
     gap: 8px;
 }
-.stat-row {
-    back
+.panel-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 4px;
+}
+.action-button {
+    border-radius: 10px;
+    border: 1px solid #4a6480;
+    padding: 9px 8px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    background: linear-gradient(180deg, #26374b, #1f2d3d);
+    color: #e8eef5;
+}
+.action-button.collect {
+    border-color: #4d9d7b;
+    background: linear-gradient(180deg, #23513f, #1a3e30); /** hopefully gradients don't make it look ai **/
+}
+.action-button.upgrade {
+    border-color: #8f8a4e;
+    background: #5f5a30;
+}
+.action-button.danger {
+    border-color: #9e4a4a;
+    background: #632e2e;
+}
+.close-button {
+    background: transparent;
+    border: 1px solid #425e7b;
+    color: #9fb1c5;
+    padding: 6px 10px;
+    border-radius: 8px;
 }

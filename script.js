@@ -39,6 +39,9 @@ const ticketBooth = {
     x: ENTRANCE_GRID.x,
     y: ENTRANCE_GRID.y,
     type: 'ticket_booth',
+    level: 1,
+    storedMoney: 0,
+    ticketPrice: 0,
     queue: [],
     riders: [],
     capacity: 1,
@@ -50,6 +53,7 @@ document.body.classList.add('prestart');
 const startScreen = document.getElementById('start-screen');
 const startButton = document.getElementById('start-button');
 buildings.push(ticketBooth);
+seedStarterLayout();
 
 function enterPark() {
     if (!startScreen) return;
@@ -89,6 +93,7 @@ function updateGuestCapacity() {
     carParks.forEach(cp => {
         cap += cp.capacity;
     });
+    maxGuests = cap;
     document.getElementById('max-guests-display').innerText = cap;
     return cap;
 }
@@ -105,11 +110,12 @@ function getGuestCap() {
 window.selectTool = function(toolName) {
     selectedTool = toolName;
     document.querySelectorAll('.tool-button').forEach(button => button.classList.remove('active'));
+
     if (toolName) {
-        document.getElementById(`button-${toolName}`).classList.add('active');
+        const activeButton = document.getElementById(`button-${toolName}`);
+        if (activeButton) activeButton.classList.add('active');
         canvas.style.cursor = 'crosshair';
     } else {
-        document.getElementById(`button-pointer`).classList.add('active');
         canvas.style.cursor = 'grab';
     }
 };
@@ -135,6 +141,51 @@ window.buyUpgrade = function(type) {
         }
     }
 };
+
+function isWalkableTile(x, y) {
+    if (ENTRANCES.some(e => e.unlocked && e.x === x && e.y === y)) return true;
+    const b = buildings.find(v => v.x === x && v.y === y);
+    return !!b && (b.type === 'path' || b.type === 'ticket_booth');
+}
+function worldToGrid(x,y){
+    return {x:Math.floor(x / GRID_SIZE), y: Math.floor(y / GRID_SIZE)};
+}
+function setGuestTargetTile(g, t) {
+    g.targetX = t.x * GRID_SIZE + GRID_SIZE / 2;
+    g.targetY = t.y * GRID_SIZE + GRID_SIZE / 2;
+}
+function nearestWalkableAround(x,y) {
+    const a = [{x,y}, {x:x+1,y}, {x:x-1,y}, {x,y:y+1}, {x,y:y-1}];
+    for (const t of a) if (isWalkableTile(t.x,t.y)) {
+        return t;
+    }
+    return null;
+}
+function randomPathTile() {
+    const tiles = buildings.filter(b => b.type==='path' || b.type==='ticket_booth');
+    if (!tiles.length) return {x:PARK_ORIGIN_X + 1, y:PARK_ORIGIN_Y + 1};
+    const t = tiles[Math.floor(Math.random() * tiles.length)];
+    return {x:t.x, y:t.y};
+}
+function addStarterBuilding(type, x, y) {
+    if (buildings.some(b => b.x === x && b.y === y)) return;
+    const b = {x, y, type, level: 1, storedMoney: 0, queue: [], riders: [], state: 'idle', timer: 0, capacity: 0, ticketPrice: 0, duration: 0};
+    if (type === 'burger') {b.capacity = 2; b.duration = 40; b.ticketPrice = 10;}
+    if (type === 'ride_swing') {b.capacity = 4; b.duration = 150; b.ticketPrice = 25;}
+    buildings.push(b);
+}
+
+function seedStarterLayout() {
+    const cx = PARK_ORIGIN_X + Math.floor(parkWidth / 2);
+    const cy = PARK_ORIGIN_Y + Math.floor(parkHeight / 2);
+    for (let x = cx - 3; x <= cx + 3; x++) addStarterBuilding('path', x, cy);
+    for (let y = cy - 2; y <= cy + 2; y++) addStarterBuilding('path', cx, y);
+    
+    addStarterBuilding('path', cx - 2, cy);
+    addStarterBuilding('path', cx + 2, cy);
+    addStarterBuilding('burger', cx - 2, cy - 1);
+    addStarterBuilding('ride_swing', cx + 2, cy - 1);
+}
 function openBuildingMenu(b) {
     selectedBuilding = b;
     const menu = document.getElementById('building-menu');
@@ -221,13 +272,18 @@ class Guest {
     }
 
     update() {
+
         if (this.state === 'riding' || this.state === 'queuing') return;
         const dx = this.targetX - this.x;
         const dy = this.targetY - this.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist > this.speed) {
-            this.x += (dx / dist) * this.speed;
-            this.y += (dy / dist) * this.speed;
+            const nx = this.x+(dx / dist) * this.speed;
+            const ny = this.y+(dy / dist) * this.speed;
+            const g = worldToGrid(nx,ny);
+            if(!isWalkableTile(g.x, g.y)) {this.pickNewAction(); return;}
+            this.x = nx;
+            this.y = ny;
         } else {
             this.handleArrival();
         }
@@ -235,8 +291,9 @@ class Guest {
 
     goToBuilding(b) {
         this.targetBuilding = b;
-        this.targetX = b.x * GRID_SIZE + GRID_SIZE / 2;
-        this.targetY = b.y * GRID_SIZE + GRID_SIZE / 2;
+        const t = nearestWalkableAround(b.x, b.y);
+        if (!t) {this.pickNewAction(); return;}
+        setGuestTargetTile(this, t);
     }
 
     handleArrival() {
@@ -245,8 +302,8 @@ class Guest {
                 this.targetBuilding.queue.push(this);
                 this.state = 'queuing';
             } else {
-                this.state = 'wandering';
-                this.pickNewAction();
+                this.state='wandering';
+                setGuestTargetTile(this,randomPathTile());
             }
         } else {
             this.pickNewAction();
@@ -348,6 +405,11 @@ canvas.addEventListener('mousedown', (e) => {
     if (document.getElementById('upgrades-menu').classList.contains('hidden') === false) return;
 
     const mouse = getWorldMouse(e);
+    const near = isWalkableTile(gridX + 1, gridY) || isWalkableTile(gridX - 1, gridY) || isWalkableTile(gridX, gridY + 1) || isWalkableTile(gridX, gridY - 1);
+    if (!near) {
+        alert("Place it next to a path.");
+        return;
+    }
     const gridX = Math.floor(mouse.x / GRID_SIZE);
     const gridY = Math.floor(mouse.y / GRID_SIZE);
 
@@ -387,6 +449,7 @@ canvas.addEventListener('mousedown', (e) => {
             buildings.push(newB);
             spawnFloatingText(`-$${cost}`, mouse.x, mouse.y, '#e74c3c');
             updateGuestCapacity();
+            window.selectTool(null);
         } else {
             alert("Too expensive!");
         }
@@ -547,6 +610,7 @@ function drawBuilding(b) {
 function loop() {
     frameCount++;
     processBuildings();
+    if (frameCount % 45 === 0) spawnGuest();
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     ctx.save();
     ctx.translate(-camera.x, -camera.y);
@@ -557,6 +621,7 @@ function loop() {
     buildings.forEach(drawBuilding);
     guests.forEach(g => {g.update(); g.draw();});
     particles.forEach(p => {p.update(); p.draw(); if(p.life<=0) particles.shift();});
+    updateGuestDisplay();
     ctx.restore();
     requestAnimationFrame(loop);
 }
