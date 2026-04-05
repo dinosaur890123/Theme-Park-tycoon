@@ -2,7 +2,7 @@ body {
     margin: 0;
     overflow: hidden;
     font-family: 'Calibri';
-    background-color: #2f4760;
+    background: radial-gradient(circle at 20% 15%, #3c5d7f, #2f4760 45%, #273d55 100%);
     color: white;
     user-select: none;
 }
@@ -15,12 +15,13 @@ body {
     pointer-events: none;
 }
 #stats-bar {
-    background: rgba(0, 0, 0, 0.8);
+    background: linear-gradient(180deg, rgba(10, 18, 27, 0.9), rgba(8, 15, 24, 0.75));
     padding: 10px 20px;
     display: flex;
     gap: 20px;
     pointer-events: auto;
     border-bottom: 2px solid #34495e;
+    backdrop-filter: blur(6px);
 }
 .stat {
     font-weight: bold;
@@ -28,6 +29,13 @@ body {
 }
 .money {color: #32b96b;}
 .guests {color: #3498db;}
+.tag {
+    color: #f1c56f;
+    font-size: 14px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    align-self: center;
+}
 button {
     cursor: pointer;
     font-family: inherit;
@@ -37,9 +45,11 @@ button {
 
 #button-open-upgrades {
     border: 1px solid #5b8ec2;
-    background: #3a78b8;
+    background: linear-gradient(180deg, #4a8bc8, #326da8);
+    color: #e7f3ff;
+    font-weight: 700;
 }
-#button-open-upgrades:hover {background: #9b59b6;}
+#button-open-upgrades:hover {background: linear-gradient(180deg, #5a9ad6, #3f7fbd);}
 .hidden {
     display: none !important;
 }
@@ -48,16 +58,17 @@ button {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: white;
+    background: linear-gradient(180deg, #f8fbff, #eef4fa);
     color: #3c3b3b;
     padding: 20px;
-    border-radius: 8px;
+    border-radius: 12px;
     width: 300px;
     pointer-events: auto;
     display: flex;
     flex-direction: column;
     gap: 10px;
     z-index: 100;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
 }
 #building-menu h3 {
     margin: 0;
@@ -104,15 +115,16 @@ button {
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.8);
+    background: linear-gradient(180deg, rgba(9, 17, 26, 0.9), rgba(11, 21, 31, 0.78));
     padding: 10px;
     border-radius: 10px;
     display: flex;
     gap: 10px;
     pointer-events: auto;
+    border: 1px solid rgba(156, 180, 205, 0.35);
 }
 .tool-button {
-    background: #34495e;
+    background: linear-gradient(180deg, #415a74, #34495e);
     border: 2px solid #b2bbc1;
     color: white;
     padding: 10px 15px;
@@ -126,8 +138,13 @@ button {
     min-width: 80px;
 }
 .tool-button:hover {
-    background: #5b6c7e;
+    background: linear-gradient(180deg, #5f7387, #4b6074);
     transform: translateY(-2px);
+}
+.tool-button.active {
+    border-color: #ffcd74;
+    box-shadow: 0 0 0 2px rgba(255, 205, 116, 0.25);
+    background: linear-gradient(180deg, #516e89, #40586f);
 }
 .tool-button:active {
     background: #df781e;
@@ -162,7 +179,7 @@ body.prestart #ui-layer {
     overflow: hidden;
     display: grid;
     place-items: center;
-    background: #2c5a80;
+    background: radial-gradient(circle at 25% 20%, rgba(255, 190, 92, 0.12), transparent 35%), #2c5a80;
 }
 #start-screen .spotlight {
     position: absolute;
@@ -274,4 +291,40 @@ body.prestart #ui-layer {
     color: #9fb1c5;
     padding: 6px 10px;
     border-radius: 8px;
+}
+
+#game-hint {
+    position: absolute;
+    left: 50%;
+    bottom: 90px;
+    transform: translateX(-50%);
+    background: rgba(6, 12, 18, 0.62);
+    border: 1px solid rgba(167, 191, 216, 0.35);
+    border-radius: 999px;
+    padding: 7px 14px;
+    color: #c9d8e7;
+    font-size: 12px;
+    letter-spacing: 0.03em;
+    pointer-events: none;
+}
+
+@media (max-width: 800px) {
+    #stats-bar {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    #toolbar {
+        width: calc(100% - 20px);
+        justify-content: flex-start;
+        overflow-x: auto;
+    }
+    .tool-button {
+        min-width: 86px;
+    }
+    #game-hint {
+        bottom: 84px;
+        width: calc(100% - 24px);
+        text-align: center;
+        border-radius: 12px;
+    }
 }

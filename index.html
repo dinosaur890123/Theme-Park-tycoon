@@ -21,6 +21,7 @@
         <div id="stats-bar">
             <div class="stat money">Cash: $<span id="money-display">1000</span></div>
             <div class="stat guests">Guests: <span id="guest-display">0</span> / <span id="max-guests-display">30</span></div>
+            <div class="stat tag">Park Open</div>
             <button id="button-open-upgrades" onclick="toggleUpgrades()">Upgrades</button>
         </div>
         <div id="upgrades-menu" class="hidden">
@@ -60,10 +61,6 @@
                     <strong id="b-menu-level">Level 1</strong>
                 </div>
                 <div class="stat-row">
-                    <span>Stored Cash</span>
-                    <strong>$<span id="b-menu-stored">0</span></strong>
-                </div>
-                <div class="stat-row">
                     <span>Queue</span>
                     <strong id="b-menu-queue">0</strong>
                 </div>
@@ -77,7 +74,6 @@
                 </div>
             </div>
             <div class="panel-actions">
-                <button class="action-button collect" onclick="collectSelected()">Collect</button>
                 <button class="action-button upgrade" id="b-menu-upgrade-button">$150</button>
                 <button class="action-button danger" onclick="deleteSelectedBuilding()">Bulldoze</button>
             </div>
@@ -101,6 +97,7 @@
             <span class="cost">$50</span>
         </button>
         </div>
+        <div id="game-hint">Drag to move the camera, and you can click buildings to open/upgrade!</div>
         <div id="tooltip"></div>
     </div>
     <canvas id="gameCanvas"></canvas>
