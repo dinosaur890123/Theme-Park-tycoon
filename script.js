@@ -84,7 +84,7 @@ function updateMoney(amount) {
     updateGuestCapacity();
 }
 function updateGuestCapacity() {
-    let cap = 3;
+    let cap = 4;
     const carParks = buildings.filter(b => b.type === 'car_park');
     carParks.forEach(cp => {
         cap += cp.capacity;
@@ -231,6 +231,9 @@ function addStarterBuilding(type, x, y) {
     const b = {x, y, type, level: 1, storedMoney: 0, queue: [], riders: [], state: 'idle', timer: 0, capacity: 0, ticketPrice: 0, duration: 0};
     if (type === 'burger') {b.capacity = 2; b.duration = 40; b.ticketPrice = 10;}
     if (type === 'ride_swing') {b.capacity = 4; b.duration = 150; b.ticketPrice = 25;}
+    if (type === 'ride_teacups') {b.capacity = 5; b.duration = 90; b.ticketPrice = 18;}
+    if (type === 'ride_ferris') {b.capacity = 8; b.duration = 210; b.ticketPrice = 32;}
+    if (type === 'ride_drop') {b.capacity = 3; b.duration = 120; b.ticketPrice = 28;}
     buildings.push(b);
 }
 
@@ -410,7 +413,13 @@ class Guest {
             if (idx > -1) guests.splice(idx, 1);
             return;
         }
-        const attractions = buildings.filter(b => (b.type === 'burger' || b.type === 'ride_swing'));
+        const attractions = buildings.filter(b => (
+            b.type === 'burger' ||
+            b.type === 'ride_swing' ||
+            b.type === 'ride_teacups' ||
+            b.type === 'ride_ferris' ||
+            b.type === 'ride_drop'
+        ));
         if (attractions.length > 0 && Math.random() < 0.7) {
             const ride = attractions[Math.floor(Math.random() * attractions.length)];
             if (this.money >= ride.ticketPrice) {
@@ -679,6 +688,21 @@ canvas.addEventListener('mousedown', (e) => {
             newB.capacity = 4; 
             newB.duration = 150; 
             newB.ticketPrice = 25;
+        } else if (selectedTool === 'ride_teacups') {
+            cost = 350;
+            newB.capacity = 5;
+            newB.duration = 90;
+            newB.ticketPrice = 18;
+        } else if (selectedTool === 'ride_ferris') {
+            cost = 900;
+            newB.capacity = 8;
+            newB.duration = 210;
+            newB.ticketPrice = 32;
+        } else if (selectedTool === 'ride_drop') {
+            cost = 700;
+            newB.capacity = 3;
+            newB.duration = 120;
+            newB.ticketPrice = 28;
         }
 
         if (money >= cost) {
@@ -843,6 +867,59 @@ function drawBuilding(b) {
         ctx.fillStyle = b.state === 'running' ? '#e74c3c' : '#95a5a6';
         ctx.fillRect(-8, 25, 16, 8);
         ctx.restore();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '10px Calibri';
+        ctx.fillText(`${b.riders.length}/${b.capacity}`, cx, py + GRID_SIZE - 2);
+    } else if (b.type === 'ride_teacups') {
+        ctx.fillStyle = '#4f77b3';
+        ctx.fillRect(px, py, GRID_SIZE, GRID_SIZE);
+        const spin = Date.now() / (b.state === 'running' ? 120 : 350);
+        for (let i = 0; i < 3; i++) {
+            const ang = spin + i * (Math.PI * 2 / 3);
+            const tx = cx + Math.cos(ang) * 10;
+            const ty = cy + Math.sin(ang) * 10;
+            ctx.fillStyle = '#f1f5f9';
+            ctx.beginPath();
+            ctx.arc(tx, ty, 5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '10px Calibri';
+        ctx.fillText(`${b.riders.length}/${b.capacity}`, cx, py + GRID_SIZE - 2);
+    } else if (b.type === 'ride_ferris') {
+        ctx.fillStyle = '#37495f';
+        ctx.fillRect(px, py, GRID_SIZE, GRID_SIZE);
+        ctx.strokeStyle = '#d6e0ea';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(cx, cy + 1, 12, 0, Math.PI * 2);
+        ctx.stroke();
+        const rot = Date.now() / (b.state === 'running' ? 350 : 900);
+        for (let i = 0; i < 4; i++) {
+            const a = rot + i * (Math.PI / 2);
+            const gx = cx + Math.cos(a) * 12;
+            const gy = cy + Math.sin(a) * 12;
+            ctx.fillStyle = '#f39c12';
+            ctx.fillRect(gx - 2, gy - 2, 4, 4);
+        }
+        ctx.strokeStyle = '#7f8c8d';
+        ctx.beginPath();
+        ctx.moveTo(cx - 8, py + GRID_SIZE);
+        ctx.lineTo(cx, cy + 5);
+        ctx.lineTo(cx + 8, py + GRID_SIZE);
+        ctx.stroke();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '10px Calibri';
+        ctx.fillText(`${b.riders.length}/${b.capacity}`, cx, py + GRID_SIZE - 2);
+    } else if (b.type === 'ride_drop') {
+        ctx.fillStyle = '#2f3f4f';
+        ctx.fillRect(px, py, GRID_SIZE, GRID_SIZE);
+        ctx.fillStyle = '#8aa0b6';
+        ctx.fillRect(cx - 3, py + 4, 6, GRID_SIZE - 8);
+        const t = b.state === 'running' ? Math.abs(Math.sin(Date.now() / 140)) : 0.9;
+        const carY = py + 6 + t * (GRID_SIZE - 16);
+        ctx.fillStyle = '#e74c3c';
+        ctx.fillRect(cx - 8, carY, 16, 7);
         ctx.fillStyle = '#ffffff';
         ctx.font = '10px Calibri';
         ctx.fillText(`${b.riders.length}/${b.capacity}`, cx, py + GRID_SIZE - 2);
